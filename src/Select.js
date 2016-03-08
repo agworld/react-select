@@ -79,6 +79,7 @@ const Select = React.createClass({
 		valueKey: React.PropTypes.string,           // path of the label value in option objects
 		valueRenderer: React.PropTypes.func,        // valueRenderer: function (option) {}
 		wrapperStyle: React.PropTypes.object,       // optional style to apply to the component wrapper
+		showSelectedInMenu: React.PropTypes.bool,		// whether to show selected components in the menu in multi, toggling selected on each click
 	},
 
 	statics: { Async },
@@ -114,6 +115,7 @@ const Select = React.createClass({
 			simpleValue: false,
 			valueComponent: Value,
 			valueKey: 'value',
+			showSelectedInMenu: false
 		};
 	},
 
@@ -431,10 +433,15 @@ const Select = React.createClass({
 		this.props.onChange(value);
 	},
 
-	selectValue (value) {
+	selectValue (value, event, selected) {
 		this.hasScrolledToOption = false;
 		if (this.props.multi) {
-			this.addValue(value);
+			if (selected) {
+				this.popValue(value);
+			}
+			else {
+				this.addValue(value);
+			}
 			this.setState({
 				inputValue: '',
 			});
@@ -739,9 +746,13 @@ const Select = React.createClass({
 		}
 	},
 
+	shouldShowSelected () {
+		return !this.props.multi || this.props.showSelectedInMenu;
+	},
+
 	render () {
 		let valueArray = this.getValueArray();
-		let options = this._visibleOptions = this.filterOptions(this.props.multi ? valueArray : null);
+		let options = this._visibleOptions = this.filterOptions(this.shouldShowSelected() ? null : valueArray);
 		let isOpen = this.state.isOpen;
 		if (this.props.multi && !options.length && valueArray.length && !this.state.inputValue) isOpen = false;
 		let focusedOption = this._focusedOption = this.getFocusableOption(valueArray[0]);
@@ -778,7 +789,7 @@ const Select = React.createClass({
 								 style={this.props.menuStyle}
 								 onScroll={this.handleMenuScroll}
 								 onMouseDown={this.handleMouseDownOnMenu}>
-							{this.renderMenu(options, !this.props.multi ? valueArray : null, focusedOption)}
+							{this.renderMenu(options, this.shouldShowSelected() ? valueArray : null, focusedOption)}
 						</div>
 					</div>
 				) : null}

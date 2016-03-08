@@ -29,7 +29,7 @@ const Option = React.createClass({
 	handleMouseDown (event) {
 		event.preventDefault();
 		event.stopPropagation();
-		this.props.onSelect(this.props.option, event);
+		this.props.onSelect(this.props.option, event, this.props.isSelected);
 	},
 
 	handleMouseEnter (event) {
@@ -63,6 +63,7 @@ const Option = React.createClass({
 			this.props.onFocus(this.props.option, event);
 		}
 	},
+
 	render () {
 		var { option } = this.props;
 		var className = classNames(this.props.className, option.className);
