@@ -437,7 +437,7 @@ const Select = React.createClass({
 		this.hasScrolledToOption = false;
 		if (this.props.multi) {
 			if (selected) {
-				this.popValue(value);
+				this.removeValue(value);
 			}
 			else {
 				this.addValue(value);
