@@ -214,7 +214,7 @@ var Option = _react2['default'].createClass({
 	handleMouseDown: function handleMouseDown(event) {
 		event.preventDefault();
 		event.stopPropagation();
-		this.props.onSelect(this.props.option, event);
+		this.props.onSelect(this.props.option, event, this.props.isSelected);
 	},
 
 	handleMouseEnter: function handleMouseEnter(event) {
@@ -248,6 +248,7 @@ var Option = _react2['default'].createClass({
 			this.props.onFocus(this.props.option, event);
 		}
 	},
+
 	render: function render() {
 		var option = this.props.option;
 
@@ -388,9 +389,10 @@ var Select = _react2['default'].createClass({
 		valueComponent: _react2['default'].PropTypes.func, // value component to render
 		valueKey: _react2['default'].PropTypes.string, // path of the label value in option objects
 		valueRenderer: _react2['default'].PropTypes.func, // valueRenderer: function (option) {}
-		wrapperStyle: _react2['default'].PropTypes.object },
+		wrapperStyle: _react2['default'].PropTypes.object, // optional style to apply to the component wrapper
+		showSelectedInMenu: _react2['default'].PropTypes.bool },
 
-	// optional style to apply to the component wrapper
+	// whether to show selected components in the menu in multi, toggling selected on each click
 	statics: { Async: _Async2['default'] },
 
 	getDefaultProps: function getDefaultProps() {
@@ -423,7 +425,8 @@ var Select = _react2['default'].createClass({
 			searchable: true,
 			simpleValue: false,
 			valueComponent: _Value2['default'],
-			valueKey: 'value'
+			valueKey: 'value',
+			showSelectedInMenu: false
 		};
 	},
 
@@ -758,10 +761,14 @@ var Select = _react2['default'].createClass({
 		this.props.onChange(value);
 	},
 
-	selectValue: function selectValue(value) {
+	selectValue: function selectValue(value, event, selected) {
 		this.hasScrolledToOption = false;
 		if (this.props.multi) {
-			this.addValue(value);
+			if (selected) {
+				this.removeValue(value);
+			} else {
+				this.addValue(value);
+			}
 			this.setState({
 				inputValue: ''
 			});
@@ -1058,10 +1065,14 @@ var Select = _react2['default'].createClass({
 		var _this5 = this;
 
 		if (!this.props.name) return;
-		var value = valueArray.map(function (i) {
-			return stringifyValue(i[_this5.props.valueKey]);
-		}).join(this.props.delimiter);
-		return _react2['default'].createElement('input', { type: 'hidden', ref: 'value', name: this.props.name, value: value, disabled: this.props.disabled });
+		return valueArray.map(function (item, index) {
+			return _react2['default'].createElement('input', { key: 'hidden.' + index,
+				type: 'hidden',
+				ref: 'value' + index,
+				name: _this5.props.name,
+				value: stringifyValue(item[_this5.props.valueKey]),
+				disabled: _this5.props.disabled });
+		});
 	},
 
 	getFocusableOption: function getFocusableOption(selectedOption) {
@@ -1074,9 +1085,13 @@ var Select = _react2['default'].createClass({
 		}
 	},
 
+	shouldShowSelected: function shouldShowSelected() {
+		return !this.props.multi || this.props.showSelectedInMenu;
+	},
+
 	render: function render() {
 		var valueArray = this.getValueArray();
-		var options = this._visibleOptions = this.filterOptions(this.props.multi ? valueArray : null);
+		var options = this._visibleOptions = this.filterOptions(this.shouldShowSelected() ? null : valueArray);
 		var isOpen = this.state.isOpen;
 		if (this.props.multi && !options.length && valueArray.length && !this.state.inputValue) isOpen = false;
 		var focusedOption = this._focusedOption = this.getFocusableOption(valueArray[0]);
@@ -1119,7 +1134,7 @@ var Select = _react2['default'].createClass({
 						style: this.props.menuStyle,
 						onScroll: this.handleMenuScroll,
 						onMouseDown: this.handleMouseDownOnMenu },
-					this.renderMenu(options, !this.props.multi ? valueArray : null, focusedOption)
+					this.renderMenu(options, this.shouldShowSelected() ? valueArray : null, focusedOption)
 				)
 			) : null
 		);
