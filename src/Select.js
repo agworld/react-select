@@ -741,9 +741,6 @@ const Select = React.createClass({
 		if (!options.length) return;
 		let focusedOption = this.state.focusedOption || selectedOption;
 		if (focusedOption && options.indexOf(focusedOption) > -1) return focusedOption;
-		for (var i = 0; i < options.length; i++) {
-			if (!options[i].disabled) return options[i];
-		}
 	},
 
 	shouldShowSelected () {
