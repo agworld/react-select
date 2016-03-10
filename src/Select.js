@@ -145,7 +145,7 @@ const Select = React.createClass({
 
 	componentDidUpdate (prevProps, prevState) {
 		// focus to the selected option
-		if (this.refs.menu && this.refs.focused && this.state.isOpen && !this.hasScrolledToOption) {
+		if (this.refs.menu && this.refs.focused && this.state.isOpen && !this.hasScrolledToOption && !this.props.showSelectedInMenu) {
 			let focusedOptionNode = ReactDOM.findDOMNode(this.refs.focused);
 			let menuNode = ReactDOM.findDOMNode(this.refs.menu);
 			menuNode.scrollTop = focusedOptionNode.offsetTop;
