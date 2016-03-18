@@ -443,6 +443,7 @@ var MultiSelectField = _react2['default'].createClass({
 				multi: true,
 				showSelectedInMenu: true,
 				simpleValue: true,
+				groupSelectedItems: true,
 				disabled: this.state.disabled,
 				value: this.state.value,
 				placeholder: 'Select your favourite(s)',
@@ -452,6 +453,16 @@ var MultiSelectField = _react2['default'].createClass({
 			_react2['default'].createElement(
 				'div',
 				{ className: 'checkbox-list' },
+				_react2['default'].createElement(
+					'label',
+					{ className: 'checkbox' },
+					_react2['default'].createElement('input', { type: 'checkbox', className: 'checkbox-control', checked: this.state.disabled, onChange: this.toggleDisabled }),
+					_react2['default'].createElement(
+						'span',
+						{ className: 'checkbox-label' },
+						'Disable the control'
+					)
+				),
 				_react2['default'].createElement(
 					'label',
 					{ className: 'checkbox' },
