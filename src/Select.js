@@ -80,6 +80,7 @@ const Select = React.createClass({
 		valueRenderer: React.PropTypes.func,        // valueRenderer: function (option) {}
 		wrapperStyle: React.PropTypes.object,       // optional style to apply to the component wrapper
 		showSelectedInMenu: React.PropTypes.bool,		// whether to show selected components in the menu in multi, toggling selected on each click
+		groupSelectedItems: React.PropTypes.bool, 	// whether to visually group all selected items into one pill
 	},
 
 	statics: { Async },
@@ -116,6 +117,7 @@ const Select = React.createClass({
 			valueComponent: Value,
 			valueKey: 'value',
 			showSelectedInMenu: false
+			groupSelectedItems: false
 		};
 	},
 
@@ -562,19 +564,32 @@ const Select = React.createClass({
 		}
 		let onClick = this.props.onValueClick ? this.handleValueClick : null;
 		if (this.props.multi) {
-			return valueArray.map((value, i) => {
+			if(this.props.groupSelectedItems) {
 				return (
 					<ValueComponent
-						disabled={this.props.disabled || value.clearableValue === false}
-						key={`value-${i}-${value[this.props.valueKey]}`}
+						disabled={false}
+						key='value-all'
 						onClick={onClick}
-						onRemove={this.removeValue}
-						value={value}
+						value={{label: "All", value: "all"}}
 						>
-						{renderLabel(value)}
+						<b>{valueArray.length}</b> items selected
 					</ValueComponent>
 				);
-			});
+			} else {
+				return valueArray.map((value, i) => {
+					return (
+						<ValueComponent
+							disabled={this.props.disabled || value.clearableValue === false}
+							key={`value-${i}-${value[this.props.valueKey]}`}
+							onClick={onClick}
+							onRemove={this.removeValue}
+							value={value}
+							>
+							{renderLabel(value)}
+						</ValueComponent>
+					);
+				})
+			}
 		} else if (!this.state.inputValue) {
 			if (isOpen) onClick = null;
 			return (

@@ -49,6 +49,7 @@ var MultiSelectField = React.createClass({
 					multi
 					showSelectedInMenu
 					simpleValue
+					groupSelectedItems
 					disabled={this.state.disabled}
 					value={this.state.value}
 					placeholder="Select your favourite(s)"
@@ -57,6 +58,10 @@ var MultiSelectField = React.createClass({
 				/>
 
 				<div className="checkbox-list">
+										<label className="checkbox">
+						<input type="checkbox" className="checkbox-control" checked={this.state.disabled} onChange={this.toggleDisabled} />
+						<span className="checkbox-label">Disable the control</span>
+					</label>
 					<label className="checkbox">
 						<input type="checkbox" className="checkbox-control" checked={this.state.disabled} onChange={this.toggleDisabled} />
 						<span className="checkbox-label">Disable the control</span>
