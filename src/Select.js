@@ -116,7 +116,7 @@ const Select = React.createClass({
 			simpleValue: false,
 			valueComponent: Value,
 			valueKey: 'value',
-			showSelectedInMenu: false
+			showSelectedInMenu: false,
 			groupSelectedItems: false
 		};
 	},
