@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import Input from 'react-input-autosize';
 import classNames from 'classnames';
+import pluralize from 'pluralize';
 
 import stripDiacritics from './utils/stripDiacritics';
 
@@ -572,7 +573,7 @@ const Select = React.createClass({
 						onClick={onClick}
 						value={{label: "All", value: "all"}}
 						>
-						<b>{valueArray.length}</b> items selected
+						<b>{valueArray.length}</b> {pluralize('item', valueArray.length)}  selected
 					</ValueComponent>
 				);
 			} else {

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "classnames": "^2.2.3",
+    "pluralize": "^1.2.1",
     "react-input-autosize": "^0.6.8"
   },
   "devDependencies": {
