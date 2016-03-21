@@ -82,6 +82,7 @@ const Select = React.createClass({
 		wrapperStyle: React.PropTypes.object,       // optional style to apply to the component wrapper
 		showSelectedInMenu: React.PropTypes.bool,		// whether to show selected components in the menu in multi, toggling selected on each click
 		groupSelectedItems: React.PropTypes.bool, 	// whether to visually group all selected items into one pill
+		selectAllEnabled: React.PropTypes.bool,			// enable the additional menu option of selecting all options
 	},
 
 	statics: { Async },
@@ -118,7 +119,8 @@ const Select = React.createClass({
 			valueComponent: Value,
 			valueKey: 'value',
 			showSelectedInMenu: false,
-			groupSelectedItems: false
+			groupSelectedItems: false,
+			selectAllEnabled: false
 		};
 	},
 
@@ -436,6 +438,23 @@ const Select = React.createClass({
 		this.props.onChange(value);
 	},
 
+	selectAll (value, event, selected) {
+		if(this.allOptionsSelected()) {
+			this.setValue([]);
+		} else {
+			this.setValue(this.getSelectableOptions());
+		}
+	},
+
+	getSelectableOptions() {
+		return this.props.options.slice(1, this.props.options.length);
+	},
+
+	allOptionsSelected () {
+		let selectableOptions = this.getSelectableOptions();
+		return selectableOptions.length == this.getValueArray().length
+	},
+
 	selectValue (value, event, selected) {
 		this.hasScrolledToOption = false;
 		if (this.props.multi) {
@@ -657,9 +676,24 @@ const Select = React.createClass({
 		);
 	},
 
+	getSelectAllOption() {
+		return {
+			label: this.allOptionsSelected() ? 'Unselect All' : 'Select All',
+			value: 'select_all',
+			select_all: true,
+		}
+	},
+
 	filterOptions (excludeOptions) {
 		var filterValue = this.state.inputValue;
 		var options = this.props.options || [];
+		if(this.props.multi && this.props.selectAllEnabled) {
+			if(options[0].select_all) {
+				options[0] = this.getSelectAllOption();
+			} else {
+				options.unshift(this.getSelectAllOption());
+			}
+		}
 		if (typeof this.props.filterOptions === 'function') {
 			return this.props.filterOptions.call(this, options, filterValue, excludeOptions);
 		} else if (this.props.filterOptions) {
@@ -711,7 +745,9 @@ const Select = React.createClass({
 					'is-selected': isSelected,
 					'is-focused': isFocused,
 					'is-disabled': option.disabled,
+					'is-select-all': option.select_all
 				});
+				let onSelect = option.select_all ? this.selectAll : this.selectValue
 
 				return (
 					<Option
@@ -719,7 +755,7 @@ const Select = React.createClass({
 						isDisabled={option.disabled}
 						isFocused={isFocused}
 						key={`option-${i}-${option[this.props.valueKey]}`}
-						onSelect={this.selectValue}
+						onSelect={onSelect}
 						onFocus={this.focusOption}
 						option={option}
 						isSelected={isSelected}
@@ -729,6 +765,7 @@ const Select = React.createClass({
 					</Option>
 				);
 			});
+
 		} else if (this.props.noResultsText) {
 			return (
 				<div className="Select-noresults">
