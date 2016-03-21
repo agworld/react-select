@@ -687,7 +687,7 @@ const Select = React.createClass({
 	filterOptions (excludeOptions) {
 		var filterValue = this.state.inputValue;
 		var options = this.props.options || [];
-		if(this.props.multi && this.props.selectAllEnabled) {
+		if(this.props.multi && this.props.selectAllEnabled && options.length > 0) {
 			if(options[0].select_all) {
 				options[0] = this.getSelectAllOption();
 			} else {
