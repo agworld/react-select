@@ -678,7 +678,7 @@ const Select = React.createClass({
 
 	getSelectAllOption() {
 		return {
-			label: this.allOptionsSelected() ? 'Unselect All' : 'Select All',
+			label: 'Select All',
 			value: 'select_all',
 			select_all: true,
 		}
