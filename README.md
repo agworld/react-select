@@ -224,6 +224,7 @@ For multi-select inputs, when providing a custom `filterOptions` method, remembe
 	disabled 	|	bool	|	false		|	whether the Select is disabled or not
 	filterOption 	|	func	|	undefined	|	method to filter a single option: `function(option, filterString)`
 	filterOptions 	|	func	|	undefined	|	method to filter the options array: `function([options], filterString, [values])`
+	groupSelectedItems	|	bool	|	false | whether to visually group all selected items into one pill
 	ignoreCase 	|	bool	|	true		|	whether to perform case-insensitive filtering
 	inputProps 	|	object	|	{}		|	custom attributes for the Input (in the Select-control) e.g: `{'data-foo': 'bar'}`
 	isLoading	|	bool	|	false		|	whether the Select is loading externally or not (such as options being loaded)
@@ -251,6 +252,8 @@ For multi-select inputs, when providing a custom `filterOptions` method, remembe
 	searchable 	|	bool	|	true		|	whether to enable searching feature or not
 	searchingText	|	string	|	'Searching...'	|	message to display whilst options are loading via asyncOptions, or when `isLoading` is true
 	searchPromptText |	string	|	'Type to search'	|	label to prompt for search input
+	selectAllEnabled	|	bool |	false  |  enable the additional menu option of selecting all options
+	showSelectedInMenu|	bool |	false |	whether to show selected components in the menu in multi, toggling selected on each click
 	value 		|	any	|	undefined	|	initial field value
 	valueKey	|	string	|	'value'		|	the option property to use for the value
 	valueRenderer	|	func	|	undefined	|	function which returns a custom way to render the value selected
