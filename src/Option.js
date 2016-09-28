@@ -31,7 +31,7 @@ const Option = React.createClass({
 	handleMouseDown (event) {
 		event.preventDefault();
 		event.stopPropagation();
-		this.props.onSelect(this.props.option, event);
+		this.props.onSelect(this.props.option, event, this.props.isSelected);
 	},
 
 	handleMouseEnter (event) {

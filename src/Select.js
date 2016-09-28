@@ -111,6 +111,9 @@ const Select = React.createClass({
 		valueKey: React.PropTypes.string,           // path of the label value in option objects
 		valueRenderer: React.PropTypes.func,        // valueRenderer: function (option) {}
 		wrapperStyle: React.PropTypes.object,       // optional style to apply to the component wrapper
+    showSelectedInMenu: React.PropTypes.bool,		// whether to show selected components in the menu in multi, toggling selected on each click
+    groupSelectedItems: React.PropTypes.bool, 	// whether to visually group all selected items into one pill
+    selectAllEnabled: React.PropTypes.bool,			// enable the additional menu option of selecting all options
 	},
 
 	statics: { Async, AsyncCreatable, Creatable },
@@ -154,6 +157,9 @@ const Select = React.createClass({
 			tabSelectsValue: true,
 			valueComponent: Value,
 			valueKey: 'value',
+      showSelectedInMenu: false,
+      groupSelectedItems: false,
+      selectAllEnabled: false,
 		};
 	},
 
@@ -204,7 +210,7 @@ const Select = React.createClass({
 
 	componentDidUpdate (prevProps, prevState) {
 		// focus to the selected option
-		if (this.menu && this.focused && this.state.isOpen && !this.hasScrolledToOption) {
+		if (this.menu && this.focused && this.state.isOpen && !this.hasScrolledToOption && !this.props.showSelectedInMenu) {
 			let focusedOptionNode = ReactDOM.findDOMNode(this.focused);
 			let menuNode = ReactDOM.findDOMNode(this.menu);
 			menuNode.scrollTop = focusedOptionNode.offsetTop;
@@ -586,7 +592,30 @@ const Select = React.createClass({
 		this.props.onChange(value);
 	},
 
-	selectValue (value) {
+  selectAll (value, event, selected) {
+		if(this.allOptionsSelected()) {
+			this.setValue([]);
+		} else {
+			this.setValue(this.getSelectableOptions());
+		}
+	},
+
+	getSelectableOptions() {
+		return this.props.options.filter(option => !option.select_all);
+	},
+
+	allOptionsSelected () {
+		let selectableOptions = this.getSelectableOptions();
+		return selectableOptions.length === this.getValueArray(this.props.value).length;
+	},
+
+	selectValue (value, event, selected) {
+    // Is it select all?
+    if (value.select_all === true) {
+      this.selectAll(value, event, selected);
+      return;
+    }
+
 		//NOTE: update value in the callback to make sure the input value is empty so that there are no styling issues (Chrome had issue otherwise)
 		this.hasScrolledToOption = false;
 		if (this.props.multi) {
@@ -594,7 +623,11 @@ const Select = React.createClass({
 				inputValue: '',
 				focusedIndex: null
 			}, () => {
-				this.addValue(value);
+        if (selected) {
+          this.removeValue(value);
+        } else {
+		      this.addValue(value);
+        }
 			});
 		} else {
 			this.setState({
@@ -770,22 +803,35 @@ const Select = React.createClass({
 		}
 		let onClick = this.props.onValueClick ? this.handleValueClick : null;
 		if (this.props.multi) {
-			return valueArray.map((value, i) => {
-				return (
-					<ValueComponent
-						id={this._instancePrefix + '-value-' + i}
-						instancePrefix={this._instancePrefix}
-						disabled={this.props.disabled || value.clearableValue === false}
-						key={`value-${i}-${value[this.props.valueKey]}`}
-						onClick={onClick}
-						onRemove={this.removeValue}
-						value={value}
-					>
-						{renderLabel(value, i)}
-						<span className="Select-aria-only">&nbsp;</span>
-					</ValueComponent>
-				);
-			});
+      if(this.props.groupSelectedItems) {
+        return (
+          <ValueComponent
+            disabled={false}
+            key='value-all'
+            onClick={onClick}
+            value={{label: 'All', value: 'all'}}
+            >
+            <b>{valueArray.length}</b> {valueArray.length > 1 ? 'items' : 'item'} selected
+          </ValueComponent>
+        );
+      } else {
+  			return valueArray.map((value, i) => {
+  				return (
+  					<ValueComponent
+  						id={this._instancePrefix + '-value-' + i}
+  						instancePrefix={this._instancePrefix}
+  						disabled={this.props.disabled || value.clearableValue === false}
+  						key={`value-${i}-${value[this.props.valueKey]}`}
+  						onClick={onClick}
+  						onRemove={this.removeValue}
+  						value={value}
+  					>
+  						{renderLabel(value, i)}
+  						<span className="Select-aria-only">&nbsp;</span>
+  					</ValueComponent>
+  				);
+  			});
+      }
 		} else if (!this.state.inputValue) {
 			if (isOpen) onClick = null;
 			return (
@@ -897,10 +943,25 @@ const Select = React.createClass({
 		);
 	},
 
+  getSelectAllOption() {
+		return {
+			label: 'Select All',
+			value: 'select_all',
+			select_all: true,
+		};
+	},
+
 	filterOptions (excludeOptions) {
 		var filterValue = this.state.inputValue;
 		var options = this.props.options || [];
 		if (this.props.filterOptions) {
+      if(this.props.multi && this.props.selectAllEnabled && options.length > 0) {
+  			if(options[0].select_all) {
+  				options[0] = this.getSelectAllOption();
+  			} else {
+  				options.unshift(this.getSelectAllOption());
+  			}
+  		}
 			// Maintain backwards compatibility with boolean attribute
 			const filterOptions = typeof this.props.filterOptions === 'function'
 				? this.props.filterOptions
@@ -1001,6 +1062,10 @@ const Select = React.createClass({
 		return null;
 	},
 
+  shouldShowSelected () {
+		return !this.props.multi || this.props.showSelectedInMenu;
+	},
+
 	renderOuter (options, valueArray, focusedOption) {
 		let menu = this.renderMenu(options, valueArray, focusedOption);
 		if (!menu) {
@@ -1021,7 +1086,7 @@ const Select = React.createClass({
 
 	render () {
 		let valueArray = this.getValueArray(this.props.value);
-		let options =	this._visibleOptions = this.filterOptions(this.props.multi ? this.getValueArray(this.props.value) : null);
+		let options =	this._visibleOptions = this.filterOptions(this.shouldShowSelected() ? null : this.getValueArray(this.props.value));
 		let isOpen = this.state.isOpen;
 		if (this.props.multi && !options.length && valueArray.length && !this.state.inputValue) isOpen = false;
 		const focusedOptionIndex = this.getFocusableOptionIndex(valueArray[0]);
@@ -1081,7 +1146,7 @@ const Select = React.createClass({
 					{this.renderClear()}
 					{this.renderArrow()}
 				</div>
-				{isOpen ? this.renderOuter(options, !this.props.multi ? valueArray : null, focusedOption) : null}
+				{isOpen ? this.renderOuter(options, this.shouldShowSelected() ? valueArray : null, focusedOption) : null}
 			</div>
 		);
 	}

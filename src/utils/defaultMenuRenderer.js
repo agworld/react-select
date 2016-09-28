@@ -25,6 +25,7 @@ function menuRenderer ({
 			'is-selected': isSelected,
 			'is-focused': isFocused,
 			'is-disabled': option.disabled,
+      'is-select-all': option.select_all
 		});
 
 		return (
