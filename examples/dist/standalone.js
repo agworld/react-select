@@ -1854,7 +1854,7 @@ var Select = _react2['default'].createClass({
 		var _this8 = this;
 
 		var valueArray = this.getValueArray(this.props.value);
-		var options = this._visibleOptions = this.filterOptions(this.shouldShowSelected() ? null : this.getValueArray(this.props.value));
+		var options = this._visibleOptions = this.filterOptions(this.shouldShowSelected() ? null : valueArray);
 		var isOpen = this.state.isOpen;
 		if (this.props.multi && !options.length && valueArray.length && !this.state.inputValue) isOpen = false;
 		var focusedOptionIndex = this.getFocusableOptionIndex(valueArray[0]);

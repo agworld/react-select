@@ -169,6 +169,8 @@ var Async = (function (_Component) {
 	}, {
 		key: 'render',
 		value: function render() {
+			var _this3 = this;
+
 			var _props3 = this.props;
 			var children = _props3.children;
 			var loadingPlaceholder = _props3.loadingPlaceholder;
@@ -181,7 +183,10 @@ var Async = (function (_Component) {
 			var props = {
 				noResultsText: isLoading ? loadingPlaceholder : searchPromptText,
 				placeholder: isLoading ? loadingPlaceholder : placeholder,
-				options: isLoading ? [] : options
+				options: isLoading ? [] : options,
+				ref: function ref(_ref) {
+					return _this3.select = _ref;
+				}
 			};
 
 			return children(_extends({}, this.props, props, {
@@ -433,7 +438,9 @@ var Creatable = _react2['default'].createClass({
 	},
 
 	onInputKeyDown: function onInputKeyDown(event) {
-		var shouldKeyDownEventCreateNewOption = this.props.shouldKeyDownEventCreateNewOption;
+		var _props3 = this.props;
+		var shouldKeyDownEventCreateNewOption = _props3.shouldKeyDownEventCreateNewOption;
+		var onInputKeyDown = _props3.onInputKeyDown;
 
 		var focusedOption = this.select.getFocusedOption();
 
@@ -442,6 +449,8 @@ var Creatable = _react2['default'].createClass({
 
 			// Prevent decorated Select from doing anything additional with this keyDown event
 			event.preventDefault();
+		} else if (onInputKeyDown) {
+			onInputKeyDown(event);
 		}
 	},
 
@@ -456,13 +465,13 @@ var Creatable = _react2['default'].createClass({
 	render: function render() {
 		var _this = this;
 
-		var _props3 = this.props;
-		var _props3$children = _props3.children;
-		var children = _props3$children === undefined ? defaultChildren : _props3$children;
-		var newOptionCreator = _props3.newOptionCreator;
-		var shouldKeyDownEventCreateNewOption = _props3.shouldKeyDownEventCreateNewOption;
+		var _props4 = this.props;
+		var _props4$children = _props4.children;
+		var children = _props4$children === undefined ? defaultChildren : _props4$children;
+		var newOptionCreator = _props4.newOptionCreator;
+		var shouldKeyDownEventCreateNewOption = _props4.shouldKeyDownEventCreateNewOption;
 
-		var restProps = _objectWithoutProperties(_props3, ['children', 'newOptionCreator', 'shouldKeyDownEventCreateNewOption']);
+		var restProps = _objectWithoutProperties(_props4, ['children', 'newOptionCreator', 'shouldKeyDownEventCreateNewOption']);
 
 		var props = _extends({}, restProps, {
 			allowCreate: true,
@@ -585,7 +594,7 @@ var Option = _react2['default'].createClass({
 	handleMouseDown: function handleMouseDown(event) {
 		event.preventDefault();
 		event.stopPropagation();
-		this.props.onSelect(this.props.option, event);
+		this.props.onSelect(this.props.option, event, this.props.isSelected);
 	},
 
 	handleMouseEnter: function handleMouseEnter(event) {
@@ -812,9 +821,12 @@ var Select = _react2['default'].createClass({
 		valueComponent: _react2['default'].PropTypes.func, // value component to render
 		valueKey: _react2['default'].PropTypes.string, // path of the label value in option objects
 		valueRenderer: _react2['default'].PropTypes.func, // valueRenderer: function (option) {}
-		wrapperStyle: _react2['default'].PropTypes.object },
+		wrapperStyle: _react2['default'].PropTypes.object, // optional style to apply to the component wrapper
+		showSelectedInMenu: _react2['default'].PropTypes.bool, // whether to show selected components in the menu in multi, toggling selected on each click
+		groupSelectedItems: _react2['default'].PropTypes.bool, // whether to visually group all selected items into one pill
+		selectAllEnabled: _react2['default'].PropTypes.bool },
 
-	// optional style to apply to the component wrapper
+	// enable the additional menu option of selecting all options
 	statics: { Async: _Async2['default'], AsyncCreatable: _AsyncCreatable2['default'], Creatable: _Creatable2['default'] },
 
 	getDefaultProps: function getDefaultProps() {
@@ -855,7 +867,10 @@ var Select = _react2['default'].createClass({
 			simpleValue: false,
 			tabSelectsValue: true,
 			valueComponent: _Value2['default'],
-			valueKey: 'value'
+			valueKey: 'value',
+			showSelectedInMenu: false,
+			groupSelectedItems: false,
+			selectAllEnabled: false
 		};
 	},
 
@@ -906,7 +921,7 @@ var Select = _react2['default'].createClass({
 
 	componentDidUpdate: function componentDidUpdate(prevProps, prevState) {
 		// focus to the selected option
-		if (this.menu && this.focused && this.state.isOpen && !this.hasScrolledToOption) {
+		if (this.menu && this.focused && this.state.isOpen && !this.hasScrolledToOption && !this.props.showSelectedInMenu) {
 			var focusedOptionNode = _reactDom2['default'].findDOMNode(this.focused);
 			var menuNode = _reactDom2['default'].findDOMNode(this.menu);
 			menuNode.scrollTop = focusedOptionNode.offsetTop;
@@ -1312,8 +1327,33 @@ var Select = _react2['default'].createClass({
 		this.props.onChange(value);
 	},
 
-	selectValue: function selectValue(value) {
+	selectAll: function selectAll(value, event, selected) {
+		if (this.allOptionsSelected()) {
+			this.setValue([]);
+		} else {
+			this.setValue(this.getSelectableOptions());
+		}
+	},
+
+	getSelectableOptions: function getSelectableOptions() {
+		return this.props.options.filter(function (option) {
+			return !option.select_all;
+		});
+	},
+
+	allOptionsSelected: function allOptionsSelected() {
+		var selectableOptions = this.getSelectableOptions();
+		return selectableOptions.length === this.getValueArray(this.props.value).length;
+	},
+
+	selectValue: function selectValue(value, event, selected) {
 		var _this3 = this;
+
+		// Is it select all?
+		if (value.select_all === true) {
+			this.selectAll(value, event, selected);
+			return;
+		}
 
 		//NOTE: update value in the callback to make sure the input value is empty so that there are no styling issues (Chrome had issue otherwise)
 		this.hasScrolledToOption = false;
@@ -1322,7 +1362,11 @@ var Select = _react2['default'].createClass({
 				inputValue: '',
 				focusedIndex: null
 			}, function () {
-				_this3.addValue(value);
+				if (selected) {
+					_this3.removeValue(value);
+				} else {
+					_this3.addValue(value);
+				}
 			});
 		} else {
 			this.setState({
@@ -1508,26 +1552,46 @@ var Select = _react2['default'].createClass({
 		}
 		var onClick = this.props.onValueClick ? this.handleValueClick : null;
 		if (this.props.multi) {
-			return valueArray.map(function (value, i) {
+			if (this.props.groupSelectedItems) {
 				return _react2['default'].createElement(
 					ValueComponent,
 					{
-						id: _this4._instancePrefix + '-value-' + i,
-						instancePrefix: _this4._instancePrefix,
-						disabled: _this4.props.disabled || value.clearableValue === false,
-						key: 'value-' + i + '-' + value[_this4.props.valueKey],
+						disabled: false,
+						key: 'value-all',
 						onClick: onClick,
-						onRemove: _this4.removeValue,
-						value: value
+						value: { label: 'All', value: 'all' }
 					},
-					renderLabel(value, i),
 					_react2['default'].createElement(
-						'span',
-						{ className: 'Select-aria-only' },
-						' '
-					)
+						'b',
+						null,
+						valueArray.length
+					),
+					' ',
+					valueArray.length > 1 ? 'items' : 'item',
+					' selected'
 				);
-			});
+			} else {
+				return valueArray.map(function (value, i) {
+					return _react2['default'].createElement(
+						ValueComponent,
+						{
+							id: _this4._instancePrefix + '-value-' + i,
+							instancePrefix: _this4._instancePrefix,
+							disabled: _this4.props.disabled || value.clearableValue === false,
+							key: 'value-' + i + '-' + value[_this4.props.valueKey],
+							onClick: onClick,
+							onRemove: _this4.removeValue,
+							value: value
+						},
+						renderLabel(value, i),
+						_react2['default'].createElement(
+							'span',
+							{ className: 'Select-aria-only' },
+							' '
+						)
+					);
+				});
+			}
 		} else if (!this.state.inputValue) {
 			if (isOpen) onClick = null;
 			return _react2['default'].createElement(
@@ -1640,10 +1704,25 @@ var Select = _react2['default'].createClass({
 		);
 	},
 
+	getSelectAllOption: function getSelectAllOption() {
+		return {
+			label: 'Select All',
+			value: 'select_all',
+			select_all: true
+		};
+	},
+
 	filterOptions: function filterOptions(excludeOptions) {
 		var filterValue = this.state.inputValue;
 		var options = this.props.options || [];
 		if (this.props.filterOptions) {
+			if (this.props.multi && this.props.selectAllEnabled && options.length > 0) {
+				if (options[0].select_all) {
+					options[0] = this.getSelectAllOption();
+				} else {
+					options.unshift(this.getSelectAllOption());
+				}
+			}
 			// Maintain backwards compatibility with boolean attribute
 			var filterOptions = typeof this.props.filterOptions === 'function' ? this.props.filterOptions : _utilsDefaultFilterOptions2['default'];
 
@@ -1741,6 +1820,10 @@ var Select = _react2['default'].createClass({
 		return null;
 	},
 
+	shouldShowSelected: function shouldShowSelected() {
+		return !this.props.multi || this.props.showSelectedInMenu;
+	},
+
 	renderOuter: function renderOuter(options, valueArray, focusedOption) {
 		var _this7 = this;
 
@@ -1771,7 +1854,7 @@ var Select = _react2['default'].createClass({
 		var _this8 = this;
 
 		var valueArray = this.getValueArray(this.props.value);
-		var options = this._visibleOptions = this.filterOptions(this.props.multi ? this.getValueArray(this.props.value) : null);
+		var options = this._visibleOptions = this.filterOptions(this.shouldShowSelected() ? null : valueArray);
 		var isOpen = this.state.isOpen;
 		if (this.props.multi && !options.length && valueArray.length && !this.state.inputValue) isOpen = false;
 		var focusedOptionIndex = this.getFocusableOptionIndex(valueArray[0]);
@@ -1835,7 +1918,7 @@ var Select = _react2['default'].createClass({
 				this.renderClear(),
 				this.renderArrow()
 			),
-			isOpen ? this.renderOuter(options, !this.props.multi ? valueArray : null, focusedOption) : null
+			isOpen ? this.renderOuter(options, this.shouldShowSelected() ? valueArray : null, focusedOption) : null
 		);
 	}
 
@@ -2064,7 +2147,8 @@ function menuRenderer(_ref) {
 			'Select-option': true,
 			'is-selected': isSelected,
 			'is-focused': isFocused,
-			'is-disabled': option.disabled
+			'is-disabled': option.disabled,
+			'is-select-all': option.select_all
 		});
 
 		return _react2['default'].createElement(
